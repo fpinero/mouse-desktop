@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x86_64-pc-windows-msvc, aarch64-pc-windows-msvc]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add the target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Name the binary after its architecture
+        shell: pwsh
+        run: |
+          $arch = if ("${{ matrix.target }}" -like "aarch64*") { "arm64" } else { "x64" }
+          Copy-Item "target/${{ matrix.target }}/release/mouse-desktop.exe" "mouse-desktop-$arch.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: mouse-desktop-*.exe
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            mouse-desktop-*.exe
+            scripts/install.ps1
+            scripts/uninstall.ps1
+          body: |
+            Portable build. Download `mouse-desktop-x64.exe` (or `-arm64`), run it, and
+            look for the icon in the notification area. No installation and no
+            Administrator privileges are needed.
+
+            See the README for the configuration file and the known limitations.
