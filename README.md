@@ -57,7 +57,9 @@ If Notepad opens, the folder is allowed to run programs and this utility will wo
 it and delete `probe.exe`.
 
 If instead you get a message about your organisation's policy, an application control
-policy is blocking user-writable folders. See the troubleshooting table below.
+policy is blocking user-writable folders. If nothing opens and nothing is said, the block
+is more likely Attack Surface Reduction, which stays silent. Either way, see the
+troubleshooting table below.
 
 ### Step 2: get the executable
 
@@ -154,6 +156,38 @@ This stops the utility, removes the start-up entry and deletes the folder. Add
 | No icon in the notification area | It may simply be hidden | Click the chevron next to the clock and drag the icon onto the taskbar |
 | The gesture works everywhere except one window | That window belongs to an elevated process | Expected, see the known limitations |
 | Nothing happens at all | Another copy may already be running | Check with `Get-Process mouse-desktop`, and start it with `--verbose` to get a log next to the configuration file |
+| A bare "Access denied", with no dialog, and even reading the file fails | A Defender Attack Surface Reduction rule is blocking it on reputation | See "Blocked by Attack Surface Reduction" below |
+
+#### Blocked by Attack Surface Reduction
+
+Attack Surface Reduction is not AppLocker and it does not announce itself. Rule
+`01443614-cd74-433a-b99e-2ecdc07bfc25`, "Block executable files from running unless they
+meet a prevalence, age, or trusted list criterion", blocks executables that are unsigned
+and too new to have a reputation, which is exactly what a fresh build of this utility is.
+
+It is easy to misread, because it gives a bare "Access denied" with no dialog and it denies
+plain reads as well as execution, so even `Get-FileHash` fails and the symptom looks like a
+file permission problem. It is not. The rule follows the file and not the folder, so
+another directory, a portable copy and a renamed file all behave the same, while a signed
+and prevalent executable in that very folder runs normally.
+
+`Get-MpPreference` will not show it either: a standard user cannot read the policy merged
+from Intune, and the rule list comes back empty. The event log is the reliable check.
+
+```powershell
+Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' -MaxEvents 50 |
+    Where-Object Id -eq 1121
+```
+
+Event 1121 is a block, 1122 is audit only. The message carries the rule id and the path.
+
+There is no way around this from a user account, and looking for one is the wrong move on a
+managed machine. What does work, cheapest first: retry after a day or two, because age is
+one of the three criteria and a same-day build fails it; submit the file to Microsoft
+through the Defender Security Intelligence submission portal, which is the intended route
+for a reputation block and needs no local privileges; ask IT for an Attack Surface
+Reduction exclusion by hash; or sign the release with an Authenticode certificate, which is
+the only fix that also travels to other managed machines.
 
 ## Configuration
 
