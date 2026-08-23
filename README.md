@@ -47,19 +47,33 @@ troubleshooting table.
 On a managed machine, do this before anything else. It takes a minute and tells you
 whether the rest is worth attempting.
 
+The probe has to be an unsigned executable that has never been seen before, because that
+is what this utility is and it is the property application control actually judges. Do not
+copy a system tool such as `notepad.exe` and run the copy: that is a flagged technique in
+its own right, blocked by a separate Attack Surface Reduction rule
+(`c0033c00-d16d-4114-a5a0-dc9b3a7d2ceb`, "Block use of copied or impersonated system
+tools"), so it fails on machines that would have run this utility perfectly well. The C#
+compiler that ships in the box with the .NET Framework builds a throwaway probe instead,
+with nothing to install.
+
 ```powershell
-New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\Programs\mouse-desktop" | Out-Null
-Copy-Item C:\Windows\System32\notepad.exe "$env:LOCALAPPDATA\Programs\mouse-desktop\probe.exe"
-Start-Process "$env:LOCALAPPDATA\Programs\mouse-desktop\probe.exe"
+$dir = "$env:LOCALAPPDATA\Programs\mouse-desktop"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if (-not (Test-Path $csc)) { $csc = "$env:WINDIR\Microsoft.NET\Framework\v4.0.30319\csc.exe" }
+Set-Content "$dir\probe.cs" 'class P{static void Main(){System.Console.WriteLine("probe ok");}}'
+& $csc /nologo /target:exe /out:"$dir\probe.exe" "$dir\probe.cs"
+& "$dir\probe.exe"
 ```
 
-If Notepad opens, the folder is allowed to run programs and this utility will work. Close
-it and delete `probe.exe`.
+If it prints `probe ok`, the machine runs unsigned programs from your profile and this
+utility will work. Delete `probe.cs` and `probe.exe` and carry on.
 
-If instead you get a message about your organisation's policy, an application control
-policy is blocking user-writable folders. If nothing opens and nothing is said, the block
-is more likely Attack Surface Reduction, which stays silent. Either way, see the
-troubleshooting table below.
+If you get a message about your organisation's policy instead, an application control
+policy is blocking user-writable folders. If you get a bare "Access denied" and nothing
+else, the block is more likely Attack Surface Reduction, which stays silent and denies
+reading the file as well as running it. Either way, this utility will be blocked the same
+way, so read the troubleshooting table below before going any further.
 
 ### Step 2: get the executable
 
