@@ -44,8 +44,8 @@ troubleshooting table.
 
 ### Step 1: check the machine will run it at all
 
-On a managed machine, do this before anything else. It takes a minute and tells you
-whether the rest is worth attempting.
+On a managed machine, do this before anything else. It takes a minute and it is the
+cheapest way to find out whether the rest is worth attempting.
 
 The probe has to be an unsigned executable that has never been seen before, because that
 is what this utility is and it is the property application control actually judges. Do not
@@ -53,7 +53,7 @@ copy a system tool such as `notepad.exe` and run the copy: that is a flagged tec
 its own right, blocked by a separate Attack Surface Reduction rule
 (`c0033c00-d16d-4114-a5a0-dc9b3a7d2ceb`, "Block use of copied or impersonated system
 tools"), so it fails on machines that would have run this utility perfectly well. The C#
-compiler that ships in the box with the .NET Framework builds a throwaway probe instead,
+compiler that ships in the box with the .NET Framework builds throwaway probes instead,
 with nothing to install.
 
 ```powershell
@@ -62,18 +62,32 @@ New-Item -ItemType Directory -Force -Path $dir | Out-Null
 $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 if (-not (Test-Path $csc)) { $csc = "$env:WINDIR\Microsoft.NET\Framework\v4.0.30319\csc.exe" }
 Set-Content "$dir\probe.cs" 'class P{static void Main(){System.Console.WriteLine("probe ok");}}'
-& $csc /nologo /target:exe /out:"$dir\probe.exe" "$dir\probe.cs"
-& "$dir\probe.exe"
+foreach ($i in 1..3) {
+    & $csc /nologo /target:exe /out:"$dir\probe$i.exe" "$dir\probe.cs"
+    & "$dir\probe$i.exe"
+}
 ```
 
-If it prints `probe ok`, the machine runs unsigned programs from your profile and this
-utility will work. Delete `probe.cs` and `probe.exe` and carry on.
+Read the outcome as a reliable no and an unreliable yes.
 
-If you get a message about your organisation's policy instead, an application control
-policy is blocking user-writable folders. If you get a bare "Access denied" and nothing
-else, the block is more likely Attack Surface Reduction, which stays silent and denies
-reading the file as well as running it. Either way, this utility will be blocked the same
-way, so read the troubleshooting table below before going any further.
+Three `probe ok` lines mean the machine probably runs unsigned programs from your profile,
+so carry on. They are not a proof. The rule that does most of this blocking asks the
+Defender cloud about a file it has never seen before, and when that lookup times out the
+file goes through anyway. On the machine these instructions were tested against, one probe
+in fifteen slipped past that way while the release executable was blocked every single
+time. It is also why the snippet compiles three separate binaries instead of running one
+of them three times: each compilation produces a different file, whereas a second run of
+the same one only re-reads a verdict that has already been cached. What actually settles
+the question is step 4, when you start the utility itself.
+
+An "Access denied" on any of the three rounds is unambiguous in the other direction:
+something is blocking unsigned executables, and this utility will be blocked the same way.
+A message about your organisation's policy points at an application control policy. A bare
+denial with no dialog, where reading the file fails as well as running it, points at
+Attack Surface Reduction. Either way, read the troubleshooting table below before going
+any further.
+
+Delete `probe.cs` and the `probe1.exe` to `probe3.exe` files when you are done.
 
 ### Step 2: get the executable
 
