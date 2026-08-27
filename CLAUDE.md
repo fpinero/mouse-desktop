@@ -38,6 +38,17 @@ These are not negotiable. A change that violates one of them is wrong even if it
 5. **Keep the dependency tree small.** Every crate added to `Cargo.toml` is a
    supply-chain liability in a process that installs a global input hook. Justify each
    one in the pull request.
+6. **The release asset names are a contract with another repository.** The step named
+   "Name the binary after its architecture" in `release.yml` copies each matrix build to
+   `mouse-desktop-x64.exe` or `mouse-desktop-arm64.exe`.
+   The product page at <https://mouse-desktop.nivelepsilon.com> links to them through
+   `releases/latest/download/<name>`, which is the only form of URL that keeps pointing at
+   the newest build without that page being rebuilt. Rename either asset and every download
+   button there answers 404, silently: nothing in this repository would notice, and nobody
+   reports a broken download, they just leave.
+   `src/utils/releases.test.ts` in `web-mouse-desktop` spells both URLs out in full for
+   exactly this reason, rather than composing them from the same constants the code uses.
+   If a rename is genuinely needed, it is one change across two repositories.
 
 ## Build and verify commands
 
