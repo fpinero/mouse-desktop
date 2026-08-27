@@ -6,6 +6,10 @@ right, and Windows moves to the neighbouring desktop.
 No Administrator privileges, no runtime to install, no driver, no service. One 270 KB
 executable that works with any mouse of any brand.
 
+There is a product page at <https://mouse-desktop.nivelepsilon.com>, with a recording of
+the gesture, the checksums to verify a download against, and, if a managed machine refuses
+to run it, the request your IT department will want.
+
 ## Why this exists
 
 Windows already changes virtual desktop with `Ctrl+Win+Left` and `Ctrl+Win+Right`, but
