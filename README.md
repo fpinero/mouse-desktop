@@ -214,12 +214,32 @@ Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' -MaxEvent
 Event 1121 is a block, 1122 is audit only. The message carries the rule id and the path.
 
 There is no way around this from a user account, and looking for one is the wrong move on a
-managed machine. What does work, cheapest first: retry after a day or two, because age is
-one of the three criteria and a same-day build fails it; submit the file to Microsoft
-through the Defender Security Intelligence submission portal, which is the intended route
-for a reputation block and needs no local privileges; ask IT for an Attack Surface
-Reduction exclusion by hash; or sign the release with an Authenticode certificate, which is
-the only fix that also travels to other managed machines.
+managed machine. What does work, cheapest first: wait, because age is one of the three
+criteria and a fresh build fails it; submit the file to Microsoft through the Defender
+Security Intelligence submission portal, which is the intended route for a reputation block
+and needs no local privileges; ask IT for an Attack Surface Reduction exclusion by hash; or
+sign the release with an Authenticode certificate, which is the only fix that also travels
+to other managed machines.
+
+Waiting works, but not on the timetable the documentation suggests. Microsoft describes
+the age criterion in terms of hours. On the machine these instructions were tested
+against, the release binary was refused every single time for the next forty four hours,
+ninety blocks in the event log, and then the very same file, byte for byte, ran without a
+complaint two weeks later. Nobody tried in between, so the day it turned is unknown.
+Budget ten days rather than two, and do not read a block on the second day as a permanent
+verdict.
+
+The clock is not yours to start. Age is counted by the Defender cloud from the first time
+it saw that hash anywhere in its telemetry, not from the moment the file reached your
+Downloads folder, so deleting it and downloading it again advances nothing, and neither
+does renaming it or moving it. The flip side is convenient: once a file has cleared it
+stays cleared wherever it goes, so copying it into the install folder afterwards is safe.
+Every new release is a different hash and starts again from zero.
+
+The two remedies are hard to tell apart afterwards. In the case above the file was
+submitted through the portal on the first day, so there is no way to know from the outside
+whether it finally passed on age or on the review. Submitting early costs nothing and at
+least guarantees the cloud has seen the file at all.
 
 ## Configuration
 
