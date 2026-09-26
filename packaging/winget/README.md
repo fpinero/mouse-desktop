@@ -1,6 +1,6 @@
 # winget manifests
 
-The manifests that make `winget install fpinero.mouse-desktop` work, kept here so they are
+The manifests that make `winget install --id fpinero.mouse-desktop` work, kept here so they are
 versioned alongside the release they describe rather than living only in a fork of
 `microsoft/winget-pkgs` that gets deleted after a merge.
 
@@ -29,6 +29,9 @@ One directory per version. Each holds the three files a multi-file manifest need
 
    The second one really installs it. Do that before opening the pull request, not after.
 4. Open the pull request from your fork.
+5. Wait. After the automated checks, a pull request from the community needs a moderator's
+   approval, and moderators are volunteers. There is nothing to answer in the meantime,
+   and a comment asking for speed does not help.
 
 ## The risk, stated up front
 
@@ -36,7 +39,15 @@ The validation pipeline of `winget-pkgs` distrusts executables that are unsigned
 reputation, which is exactly what this is. A rejection is a realistic outcome and not a sign
 that anything here is wrong.
 
-If it happens, do not push back on it. Note it, and try again when the binary has an
+It did not happen for 0.1.0. Pull request
+[#425122](https://github.com/microsoft/winget-pkgs/pull/425122) passed all ten automated
+checks on the day it was opened, 2026-08-27, including the installer scan and the
+installation on a clean virtual machine. It then waited a month for a moderator, was
+approved and merged on 2026-09-25, and the publish pipeline put it in the index the same
+night. That result belongs to that file. Every release is a new executable with a new
+hash and no reputation of its own, so the next one starts from the same place.
+
+If a rejection does happen, do not push back on it. Note it, and try again when the binary has an
 Authenticode signature or enough age and prevalence to clear the check on its own. Signing is
 the only thing that fixes this properly, and it fixes the Attack Surface Reduction block at
 the same time.
