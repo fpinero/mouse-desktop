@@ -97,6 +97,29 @@ Delete `probe.cs` and the `probe1.exe` to `probe3.exe` files when you are done.
 
 Pick one:
 
+- **With winget**, which ships with Windows 10 and 11 as App Installer, if your
+  organisation has not switched it off:
+
+  ```powershell
+  winget install --id fpinero.mouse-desktop
+  ```
+
+  By default it installs into your user profile and puts a `mouse-desktop` command on the
+  path.
+- **With Scoop**, if you already use it. Scoop exists to install software without an
+  Administrator account, which is the same constraint this utility was written for:
+
+  ```powershell
+  scoop bucket add fpinero https://github.com/fpinero/scoop-bucket
+  scoop install mouse-desktop
+  ```
+
+  Both package managers do the copying that step 3 does, so skip to step 4. Neither of
+  them starts the utility or adds the start-up entry, though. Start it once with
+  `mouse-desktop` (after winget, in a new terminal, because the path only changes for
+  windows opened afterwards), then right click the tray icon and tick "Start with
+  Windows". Leave the configuration file where it is created by default: the folder a
+  package manager installs into belongs to it and can be replaced on the next update.
 - **From a release.** Download `mouse-desktop-x64.exe` from the
   [releases page](https://github.com/fpinero/mouse-desktop/releases). Use the `arm64`
   build only on an Arm laptop such as a Snapdragon X machine; the x64 build also runs
@@ -111,6 +134,12 @@ Pick one:
   The result is `target\release\mouse-desktop.exe`, about 270 KB. Copy that one file to
   the target machine, by memory stick, OneDrive, or however files normally reach it. No
   build tools are needed on the machine that runs it.
+
+A package manager changes how the file arrives, not whether a managed machine lets it run.
+Attack Surface Reduction and application control judge the executable itself, so a file
+that step 1 predicts will be blocked is blocked just the same when winget or Scoop put it
+there. Whichever way you got it, the first start may show the SmartScreen panel described
+in step 3.
 
 ### Step 3: install it
 
@@ -169,6 +198,29 @@ from there, so nothing is left behind on the machine.
 Run `install.ps1` again with the new executable. It stops the running copy first, so there
 is nothing else to do. Your configuration file is not touched.
 
+If a package manager installed it, let it do the update instead. Choose "Exit" from the
+tray menu first, or run `Stop-Process -Name mouse-desktop`, because Windows will not
+replace an executable that is running:
+
+```powershell
+winget upgrade --id fpinero.mouse-desktop
+scoop update mouse-desktop
+```
+
+Then start it again and check in the tray menu that "Start with Windows" is still ticked.
+The tick is only shown when the start-up entry points at the very copy that is running, so
+if the update moved the file, it shows unticked and one click puts it right.
+
+Neither package manager follows the releases page by itself. A version reaches winget once
+its manifest has been merged into `microsoft/winget-pkgs`, which includes a review by a
+volunteer moderator, and reaches Scoop once the bucket has been updated for it. Until then
+both answer that there is nothing to upgrade, so they can trail a new release by days or
+weeks.
+
+A new release is a new file, and a managed machine judges it from scratch. A laptop that
+runs the current version without complaint can still block the next one for a while, as
+described under "Blocked by Attack Surface Reduction" below.
+
 ### Removing
 
 ```powershell
@@ -177,6 +229,18 @@ is nothing else to do. Your configuration file is not touched.
 
 This stops the utility, removes the start-up entry and deletes the folder. Add
 `-RemoveConfig` to delete the configuration too.
+
+If a package manager installed it, untick "Start with Windows" in the tray menu and choose
+"Exit" before you remove it:
+
+```powershell
+winget uninstall --id fpinero.mouse-desktop
+scoop uninstall mouse-desktop
+```
+
+Neither of them knows about the start-up entry, which lives under `HKEY_CURRENT_USER`, so
+they leave it behind pointing at a file that no longer exists. They leave the configuration
+in `%APPDATA%\mouse-desktop` too; delete that folder by hand if you want it gone.
 
 ### Troubleshooting
 
